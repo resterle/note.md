@@ -1,0 +1,24 @@
+{
+  "name": "note.md",
+  "version": "1.0.0",
+  "description": "Markdown renderer for notetaking",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "repository": "https://github.com/resterle/note.md",
+  "author": "Raphael Esterle",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^10.1.2"
+  },
+  "dependencies": {
+    "jquery": "^3.5.1",
+    "markdown-it": "^11.0.1",
+    "markdown-it-emoji": "^1.4.0",
+    "markdown-it-link-attributes": "^3.0.0",
+    "markdown-it-prism": "^2.1.1",
+    "markdown-it-task-lists": "^2.1.1",
+    "prismjs": "^1.21.0"
+  }
+}

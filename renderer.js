@@ -102,7 +102,6 @@ function updateFileList(selectedNote){
 }
 
 function loadAndRender(filename) {  
-    console.log(`ANCHOR ${anchor}`)
     const absolutePath = `${baseDir}/${filename}`;
     //Check if file exists
     if(fs.existsSync(absolutePath)) {
@@ -120,7 +119,8 @@ function jumpToAnchor(anchor){
 }
 
 function markAnchor(anchor){
-    const element = $(`#${anchor}`);
+    const elementId = $.escapeSelector(anchor)
+    const element = $(`#${elementId}`);
     element.addClass('mark-element')
     setTimeout(() => element.removeClass('mark-element'), 1000)
 }
@@ -139,7 +139,6 @@ $(document).on('click', `a[href^="${baseDir}"]`, function(event) {
     event.preventDefault();
     const note = event.currentTarget.pathname.substring(baseDir.length+1);
     const anchor = event.currentTarget.hash.substring(1);
-    console.log(`-> ${anchor}`)
     noteClickedHandler(note, anchor)();
 });
 

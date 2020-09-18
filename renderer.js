@@ -1,4 +1,28 @@
 const baseDir = '/home/raphael/.notes'
+const Plugin = require('markdown-it-regexp')
+function plugin(){
+    return Plugin(
+    /\[\[(((\S+\/)*(\S+\#)?(\S+))|(\#\S+))(\|\S[\S\s]+)?\]\]/,
+
+    // this function will be called when something matches
+    function(match, utils) {
+
+        const input = match[0].substring(2, match[0].length-2);
+        const labelSplit = input.split('|');
+        const label = labelSplit[1] ? labelSplit[1] : '';
+        const anchorSplit = labelSplit[0].split('#');
+        const anchor = anchorSplit[1] ? anchorSplit[1] : '';
+        const path = anchorSplit[0];
+
+        let linkLabel = label;
+        linkLabel = linkLabel ? linkLabel : path;
+        linkLabel = linkLabel ? linkLabel : anchor;
+        let href = path ? `${baseDir}/${path}.md`: '';
+        href = anchor ? `${href}#${anchor}` : href;
+
+        return `<a href="${href}">${linkLabel}</a>`
+    })
+}
 const md = require('markdown-it')()
     .use(require('markdown-it-emoji'))
     .use(require('markdown-it-task-lists'))
@@ -6,10 +30,12 @@ const md = require('markdown-it')()
     .use(require('markdown-it-anchor'))
     .use(require('markdown-it-mark'))
     .use(require('markdown-it-meta'))
-    .use(require('markdown-it-wikilinks')({ uriSuffix: '', relativeBaseURL: '#', baseURL: `${baseDir}/` }));
+    .use(plugin());
+    //.use(require('markdown-it-wikilinks')({ uriSuffix: '', relativeBaseURL: '#', baseURL: `${baseDir}/` }));
 
 const fs = require('fs')
-const $ = require('jquery') 
+const $ = require('jquery'); 
+const anchor = require('markdown-it-anchor');
 const shell = require('electron').shell;
 
 
@@ -25,16 +51,19 @@ fs.watch('/home/raphael/.notes', (eventType, filename) => {
     }
 });
 
-function setCurrentFile(current){
+function setCurrentFile(current, anchor){
     $('.title').text(nameFromFile(current));
     currentFile = current;
-    loadAndRender(current);
+    loadAndRender(current, anchor);
     createNoteList(current);
+    if(anchor){
+        jumpToAnchor(anchor);
+    }
 }
 
-function noteClickedHandler(note){
+function noteClickedHandler(note, anchor=''){
     return () => {
-        setCurrentFile(note);
+        setCurrentFile(note, anchor);
     }
 }
 
@@ -73,6 +102,7 @@ function updateFileList(selectedNote){
 }
 
 function loadAndRender(filename) {  
+    console.log(`ANCHOR ${anchor}`)
     const absolutePath = `${baseDir}/${filename}`;
     //Check if file exists
     if(fs.existsSync(absolutePath)) {
@@ -84,6 +114,22 @@ function loadAndRender(filename) {
     }
 }
 
+function jumpToAnchor(anchor){
+    document.getElementById(anchor).scrollIntoView();
+    markAnchor(anchor);
+}
+
+function markAnchor(anchor){
+    const element = $(`#${anchor}`);
+    element.addClass('mark-element')
+    setTimeout(() => element.removeClass('mark-element'), 1000)
+}
+
+$(document).on('click', 'a[href^="#"]', function(event) {
+    const anchor = event.currentTarget.hash.substring(1);
+    markAnchor(anchor);
+});
+
 $(document).on('click', 'a[href^="https"]', function(event) {
     event.preventDefault();
     shell.openExternal(this.href);
@@ -91,6 +137,10 @@ $(document).on('click', 'a[href^="https"]', function(event) {
 
 $(document).on('click', `a[href^="${baseDir}"]`, function(event) {
     event.preventDefault();
-    note = event.currentTarget.pathname.substr(baseDir.length+1);
-    noteClickedHandler(`${note}.md`)();
+    const note = event.currentTarget.pathname.substring(baseDir.length+1);
+    const anchor = event.currentTarget.hash.substring(1);
+    console.log(`-> ${anchor}`)
+    noteClickedHandler(note, anchor)();
 });
+
+

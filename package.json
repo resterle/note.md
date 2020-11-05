@@ -23,6 +23,8 @@
     "markdown-it-prism": "^2.1.1",
     "markdown-it-task-lists": "^2.1.1",
     "markdown-it-wikilinks": "^1.0.1",
-    "prismjs": "^1.21.0"
+    "nodegit": "^0.27.0",
+    "prismjs": "^1.21.0",
+    "simple-git": "^2.20.1"
   }
 }

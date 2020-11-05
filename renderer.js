@@ -1,8 +1,10 @@
 const baseDir = '/home/raphael/.notes'
+const linkRegExp = '\\[\\[(((\\S+/)*(\\S+#)?(\\S+))|(#\\S+))(\\|\\S[\\S\\s]+)?\\]\\]'
+const linkRegExp1 = /\[\[((((\S+\/)*(\S+#)?(\S+)))|((#\S+))(\|\S[\S\s]+)?)\]\]/
 const Plugin = require('markdown-it-regexp')
 function plugin(){
     return Plugin(
-    /\[\[(((\S+\/)*(\S+\#)?(\S+))|(\#\S+))(\|\S[\S\s]+)?\]\]/,
+    new RegExp(linkRegExp),
 
     // this function will be called when something matches
     function(match, utils) {
@@ -23,7 +25,11 @@ function plugin(){
         return `<a href="${href}">${linkLabel}</a>`
     })
 }
-const md = require('markdown-it')()
+const md = require('markdown-it')({
+  html: true,
+  linkify: true,
+  typographer: true
+})
     .use(require('markdown-it-emoji'))
     .use(require('markdown-it-task-lists'))
     .use(require('markdown-it-prism'), {plugins: ['highlight-keywords', 'show-language']})
@@ -35,9 +41,8 @@ const md = require('markdown-it')()
 
 const fs = require('fs')
 const $ = require('jquery'); 
-const anchor = require('markdown-it-anchor');
 const shell = require('electron').shell;
-
+const git = require('simple-git');
 
 const mdRegEx = /.*\.md$/;
 let currentFile = 'test.md';
@@ -45,7 +50,8 @@ let notes = [];
 
 updateFileList();
 
-fs.watch('/home/raphael/.notes', (eventType, filename) => {
+fs.watch(baseDir, (eventType, filename) => {
+    console.log(filename);
     if (filename && filename === currentFile && eventType === 'change') {
         loadAndRender(currentFile)
     }
@@ -94,6 +100,15 @@ function updateFileList(selectedNote){
     fs.readdir(baseDir, (err, files) => {
         files.forEach(file => {
             if(mdRegEx.test(file)){
+                fs.readFile(`${baseDir}/${file}`, (error, data) => {
+                    if(error){
+                        console.log(error);
+                        return;
+                    }
+                    console.log(linkRegExp1);
+                    const finds = linkRegExp1.exec(data);
+                    console.log(finds);
+                });
                 notes.push(file);
             }
         });
@@ -141,5 +156,33 @@ $(document).on('click', `a[href^="${baseDir}"]`, function(event) {
     const anchor = event.currentTarget.hash.substring(1);
     noteClickedHandler(note, anchor)();
 });
+const repo = git(baseDir);
 
+function rebase(branch){
+    repo.rebase(branch)
+        .then(() => push(branch))
+        .then((ok) => console.log(ok))
+        .catch((error) => console.log(error));
+}
 
+function push(branch){
+    return repo.push('origin', branch);
+}
+
+repo.fetch()
+    .then(() => repo.status(['--ahead-behind']))
+    .then((status) => {
+        console.log(status);
+        if(status.modified.length > 0){
+            //repo
+            //    .add(status.modified)
+            //    .commit('from node with love', (res) => console.log(res));
+        }
+        else if(status.behind > 0){
+            //rebase(status.current);
+        }
+        else if(status.ahead > 0){
+            //push(status.current)
+            //    .then(ok => console.log(ok)); 
+        }
+    });
